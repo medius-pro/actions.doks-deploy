@@ -15,7 +15,8 @@ inputs:
     required: true
   migrations:
     description: 'migration job name'
-    required: true
+    required: false
+    default: null
   do-access-token:
     description: 'DO access token'
     required: true
@@ -50,16 +51,17 @@ runs:
     run: doks -n ${{ inputs.namespace }} rollout status deployment/${{ inputs.deployment }}
     shell: bash
   - name: wait for migrations job to complete
+    if: inputs.migrations != null
     run: doks -n ${{ inputs.namespace }} wait --for=condition=Complete --timeout=30s job "${{ inputs.migrations }}" -o=jsonpath='{.status.conditions[*].type}' | grep -q Complete || exit 1
     id: migrations
     continue-on-error: true
     shell: bash
   - name: get logs from migrations job
-    if: ${{ success() }}
+    if: success() && inputs.migrations != null
     run: doks -n ${{ inputs.namespace }} logs $(doks -n ${{ inputs.namespace }} get pod -l controller-uid=$(doks -n ${{ inputs.namespace }} get job "${{ inputs.migrations }}" -o "jsonpath={.metadata.labels.controller-uid}") -o name)
     shell: bash
   - name: throw an error if migrations job failed
-    if: ${{ failure() && steps.migrations.conclusion == 'failure' }}
+    if: failure() && steps.migrations.conclusion == 'failure' && inputs.migrations != null
     run: |
       echo "database migration error"
       exit 1
