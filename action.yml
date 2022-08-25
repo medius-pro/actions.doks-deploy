@@ -32,11 +32,8 @@ runs:
   - uses: digitalocean/action-doctl@v2
     with:
       token: ${{ inputs.do-access-token }}
-  - name: pull image with kubectl binary
-    run: docker pull ghcr.io/medius-pro/kubectl
-    shell: bash
   - name: create temporary container
-    run: docker create --name kubectl ghcr.io/medius-pro/kubectl /medius-kubectl
+    run: docker create --name kubectl ghcr.io/medius-pro/kubectl:${{ inputs.version }} /medius-kubectl
     shell: bash
   - name: copy binary
     run: docker cp kubectl:/medius-kubectl /usr/local/bin/doks
