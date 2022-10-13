@@ -4,6 +4,10 @@ inputs:
   sha:
     description: 'commit SHA'
     required: true
+  app:
+    description: 'app version'
+    required: false
+    default: ''
   environment:
     description: 'environment name'
     required: true
@@ -16,7 +20,7 @@ inputs:
   migrations:
     description: 'migration job name'
     required: false
-    default: null
+    default: ''
   do-access-token:
     description: 'DO access token'
     required: true
@@ -45,23 +49,24 @@ runs:
   - name: apply deployment
     env:
       COMMIT_SHA: ${{ inputs.sha }}
+      APP_VERSION: ${{ inputs.app }}
     run: envsubst < .github/k8s/${{ inputs.environment }}.yaml | doks apply -f -
     shell: bash
   - name: wait for deployment to complete
     run: doks -n ${{ inputs.namespace }} rollout status deployment/${{ inputs.deployment }}
     shell: bash
   - name: wait for migrations job to complete
-    if: inputs.migrations != null
+    if: inputs.migrationsinputs.migrations != ''
     run: doks -n ${{ inputs.namespace }} wait --for=condition=Complete --timeout=30s job "${{ inputs.migrations }}" -o=jsonpath='{.status.conditions[*].type}' | grep -q Complete || exit 1
     id: migrations
     continue-on-error: true
     shell: bash
   - name: get logs from migrations job
-    if: success() && inputs.migrations != null
+    if: success() && inputs.migrations != ''
     run: doks -n ${{ inputs.namespace }} logs $(doks -n ${{ inputs.namespace }} get pod -l controller-uid=$(doks -n ${{ inputs.namespace }} get job "${{ inputs.migrations }}" -o "jsonpath={.metadata.labels.controller-uid}") -o name)
     shell: bash
   - name: throw an error if migrations job failed
-    if: failure() && steps.migrations.conclusion == 'failure' && inputs.migrations != null
+    if: failure() && steps.migrations.conclusion == 'failure' && inputs.migrations != ''
     run: |
       echo "database migration error"
       exit 1
