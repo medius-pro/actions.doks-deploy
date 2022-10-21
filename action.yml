@@ -27,7 +27,7 @@ inputs:
   cluster:
     description: 'DOKS cluster name or ID'
     required: true
-  version:
+  kubectl:
     description: 'kubectl version tag'
     required: false
     default: 'latest'
@@ -38,7 +38,7 @@ runs:
     with:
       token: ${{ inputs.do-access-token }}
   - name: create temporary container
-    run: docker create --name kubectl ghcr.io/medius-pro/kubectl:${{ inputs.version }} /medius-kubectl
+    run: docker create --name kubectl ghcr.io/medius-pro/kubectl:${{ inputs.kubectl }} /medius-kubectl
     shell: bash
   - name: copy binary
     run: docker cp kubectl:/medius-kubectl /usr/local/bin/doks
