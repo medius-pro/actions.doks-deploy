@@ -56,7 +56,7 @@ runs:
     run: doks -n ${{ inputs.namespace }} rollout status deployment/${{ inputs.deployment }}
     shell: bash
   - name: wait for migrations job to complete
-    if: inputs.migrationsinputs.migrations != ''
+    if: inputs.migrations != ''
     run: doks -n ${{ inputs.namespace }} wait --for=condition=Complete --timeout=30s job "${{ inputs.migrations }}" -o=jsonpath='{.status.conditions[*].type}' | grep -q Complete || exit 1
     id: migrations
     continue-on-error: true
